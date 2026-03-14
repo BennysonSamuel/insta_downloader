@@ -459,6 +459,21 @@
 </footer>
 
 <script>
+  // ── API base URL ──────────────────────────────────────────────────────────
+  // In production the frontend is on Vercel and the backend is on Railway.
+  // Set window.BENLOAD_API in a <script> before this, or rely on the
+  // auto-detect below: same origin = local dev, otherwise use the env var
+  // injected at build time via VITE/NEXT, or fall back to the Railway URL.
+  var API_BASE = (function() {
+    // 1. Explicit override (set this if you fork / self-host)
+    if (window.BENLOAD_API) return window.BENLOAD_API;
+    // 2. Same origin (local dev — backend + frontend on localhost:3000)
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return '';
+    // 3. Production: replace the placeholder below with your Railway URL
+    //    e.g. 'https://benload-backend-production.up.railway.app'
+    return 'insta-downloader-five.vercel.app'; // ← paste your Railway URL here, e.g. 'https://benload-production.up.railway.app'
+  })();
+
   var meta = null;
 
   function setStatus(msg, type) {
@@ -491,7 +506,7 @@
     setStatus('Fetching post info…', 'loading');
 
     try {
-      var res = await fetch('/api/instagram/info?url=' + encodeURIComponent(url));
+      var res = await fetch(API_BASE + '/api/instagram/info?url=' + encodeURIComponent(url));
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       meta = Object.assign({}, data, { url: url });
@@ -533,7 +548,7 @@
     });
 
     var a = document.createElement('a');
-    a.href = '/api/instagram/download?' + params.toString();
+    a.href = API_BASE + '/api/instagram/download?' + params.toString();
     a.click();
 
     if (what === 'text') {

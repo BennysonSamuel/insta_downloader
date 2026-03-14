@@ -280,6 +280,6 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`\n🎬  Instagram Downloader  →  http://localhost:${PORT}\n`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`\n🎬  Instagram Downloader  →  http://0.0.0.0:${PORT}\n`);
 });

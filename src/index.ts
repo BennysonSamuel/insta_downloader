@@ -74,8 +74,26 @@ function streamFile(
 // ─── Hono — info + static ─────────────────────────────────────────────────
 
 const app = new Hono();
-app.use("*", cors());
-app.use("/*", serveStatic({ root: "./public" }));
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+  }),
+);
+// Serve frontend static files only in local dev (not on Railway/production)
+// In production the frontend is deployed separately on Vercel
+const IS_PROD =
+  process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
+if (!IS_PROD) {
+  app.use("/*", serveStatic({ root: "./public" }));
+}
+
+app.get("/", (c) =>
+  c.json({ service: "BENLOAD API", status: "ok", version: "1.0.0" }),
+);
+app.get("/health", (c) => c.json({ status: "ok" }));
 
 app.get("/api/instagram/info", async (c) => {
   const url = c.req.query("url");
@@ -107,6 +125,13 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
 
   // ── Instagram: download video + text file ──────────────────────────────
   if (path === "/api/instagram/download") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     const url = qs.get("url") || "";
     const title = qs.get("title") || "instagram_video";
     const desc = qs.get("description") || "";
@@ -215,16 +240,15 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   req.on("data", (c: Buffer) => chunks.push(c));
   req.on("end", () => {
     const body = chunks.length ? Buffer.concat(chunks) : undefined;
-    Promise.resolve(
-      app.fetch(
+    app
+      .fetch(
         new Request(fullUrl, {
           method: req.method || "GET",
           headers,
           body: body?.length ? body : undefined,
         }),
         { incoming: req, outgoing: res },
-      ),
-    )
+      )
       .then(async (hr) => {
         if (res.headersSent) return;
         const h: Record<string, string> = {};
@@ -248,7 +272,7 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
           res.end();
         }
       })
-      .catch((e: any) => {
+      .catch((e: Error) => {
         if (!res.headersSent) res.writeHead(500);
         res.end(e.message);
       });

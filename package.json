@@ -1,13 +1,12 @@
 {
-  "name": "fetch-media-downloader",
+  "name": "benload",
   "version": "1.0.0",
-  "description": "YouTube & Instagram video downloader — Hono backend + TypeScript",
+  "description": "Instagram video downloader — Hono backend",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "start": "node dist/index.js",
-    "vercel-build": "tsup"
+    "build": "tsup src/index.ts --format cjs --target node18 --out-dir dist --clean --no-splitting",
+    "dev": "tsup src/index.ts --format cjs --target node18 --out-dir dist --clean --watch",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

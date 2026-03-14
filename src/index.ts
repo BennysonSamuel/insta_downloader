@@ -240,16 +240,17 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   req.on("data", (c: Buffer) => chunks.push(c));
   req.on("end", () => {
     const body = chunks.length ? Buffer.concat(chunks) : undefined;
-    app
-      .fetch(
+    Promise.resolve(
+      app.fetch(
         new Request(fullUrl, {
           method: req.method || "GET",
           headers,
           body: body?.length ? body : undefined,
         }),
         { incoming: req, outgoing: res },
-      )
-      .then(async (hr) => {
+      ),
+    )
+      .then(async (hr: Response) => {
         if (res.headersSent) return;
         const h: Record<string, string> = {};
         hr.headers.forEach((v, k) => {
